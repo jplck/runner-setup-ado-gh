@@ -4,6 +4,10 @@ param location string
 @description('Define the project name')
 param projectName string
 
+param adoPat string
+param adoPoolName string
+param adoInstanceUrl string
+
 var acrPullRole = resourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
 
 targetScope = 'subscription'
@@ -102,12 +106,24 @@ module acae_deploy 'acae.bicep' = {
   scope: rg
   params: {
     location: rg.location
-    acrName: acr.outputs.name
     logAnalyticsName: logging.outputs.logAnalyticsWorkspaceName
-    acrPullIdentityId: acaACRPullIdentity.outputs.id
     projectName: projectName
   }
   dependsOn: [
     acaPullRoleAssignment
   ]
+}
+
+module aca_ado_agent 'ado_agent.bicep' = {
+  name: 'aca_ado_agent'
+  scope: rg
+  params: {
+    location: rg.location
+    acrName: acr.outputs.name
+    acrPullIdentityId: acaACRPullIdentity.outputs.id
+    containerAppEnvName: acae_deploy.outputs.containerAppEnvName
+    adoInstanceUrl: adoInstanceUrl
+    adoPersonalAccessToken: adoPat
+    adoPoolName: adoPoolName
+  }
 }

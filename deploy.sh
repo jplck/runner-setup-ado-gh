@@ -5,8 +5,9 @@ set -e
 # infrastructure deployment properties
 PROJECT_NAME="$1"
 LOCATION="$2"
-REGISTRY_OWNER="$3"
-IMAGE_TAG="$4"
+ADO_URL="$3"
+ADO_PAT="$4"
+ADO_POOL_NAME="$5"
 
 if [ "$PROJECT_NAME" == "" ]; then
 echo "No project name provided - aborting"
@@ -33,4 +34,4 @@ az deployment sub create \
   --name "$PROJECT_NAME-core" \
   --location $LOCATION \
   --template-file ./infra/main.bicep \
-  --parameters projectName=$PROJECT_NAME location=$LOCATION
+  --parameters projectName=$PROJECT_NAME location=$LOCATION adoInstanceUrl=$ADO_URL adoPat=$ADO_PAT adoPoolName=$ADO_POOL_NAME
