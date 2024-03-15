@@ -4,9 +4,7 @@ param location string
 @description('Define the project name')
 param projectName string
 
-var acrPushRole = resourceId('Microsoft.Authorization/roleDefinitions', '8311e382-0749-4cb8-b61a-304f252e45ec')
 var acrPullRole = resourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
-var deploymentScriptRole = resourceId('Microsoft.Authorization/roleDefinitions', 'a5687739-dd36-420c-903b-820d2ac53125')
 
 targetScope = 'subscription'
 
@@ -34,39 +32,12 @@ module logging 'logging.bicep' = {
   }
 }
 
-module deployPushIdentity 'identity.bicep' = {
-  name: 'deployPushIdentity'
-  scope: rg
-  params: {
-    location: rg.location
-    name: 'deployId-${projectName}'
-  }
-}
-
 module acaACRPullIdentity 'identity.bicep' = {
   name: 'acaACRPullIdentity'
   scope: rg
   params: {
     location: rg.location
     name: 'acaId-${projectName}'
-  }
-}
-
-module acrPushRoleAssignment 'roleAssignment.bicep' = {
-  name: 'acrPushRoleAssignment'
-  scope: rg
-  params: {
-    principalId: deployPushIdentity.outputs.principalId
-    role: acrPushRole
-  }
-}
-
-module deploymentScriptRoleAssignment 'roleAssignment.bicep' = {
-  name: 'deploymentScriptRole'
-  scope: rg
-  params: {
-    principalId: deployPushIdentity.outputs.principalId
-    role: deploymentScriptRole
   }
 }
 
@@ -79,6 +50,40 @@ module acaPullRoleAssignment 'roleAssignment.bicep' = {
   }
 }
 
+module deployPushIdentity 'identity.bicep' = {
+  name: 'deployPushIdentity'
+  scope: rg
+  params: {
+    location: rg.location
+    name: 'deployId-${projectName}'
+  }
+}
+
+module deploymentScriptRoleAssignment 'roleAssignment.bicep' = {
+  name: 'deploymentScriptRole'
+  scope: rg
+  params: {
+    principalId: deployPushIdentity.outputs.principalId
+    role: deploymentScriptRole.outputs.roleDefId
+  }
+}
+
+module deploymentScriptRole 'customRole.bicep' = {
+  name: 'deploymentScriptRoleDefinition'
+  scope: rg
+  params: {
+    roleName: 'DeploymentScriptRole-${projectName}'
+    actions: [
+      'Microsoft.Storage/storageAccounts/*'
+      'Microsoft.ContainerInstance/containerGroups/*'
+      'Microsoft.Resources/deployments/*'
+      'Microsoft.Resources/deploymentScripts/*'
+      'Microsoft.ContainerRegistry/registries/*' // Not optimal as it gives full access to the ACR. Change to a more granular role if possible. Required for the deployment script to (build)push to the ACR.
+    ]
+    scope: rg.id
+  }
+}
+
 module agent_deploy 'deploy.bicep' = {
   name: 'agent_deploy'
   scope: rg
@@ -88,7 +93,21 @@ module agent_deploy 'deploy.bicep' = {
     managedIdentityName: deployPushIdentity.outputs.name
   }
   dependsOn: [
-    acrPushRoleAssignment
     deploymentScriptRoleAssignment
+  ]
+}
+
+module acae_deploy 'acae.bicep' = {
+  name: 'acae_deploy'
+  scope: rg
+  params: {
+    location: rg.location
+    acrName: acr.outputs.name
+    logAnalyticsName: logging.outputs.logAnalyticsWorkspaceName
+    acrPullIdentityId: acaACRPullIdentity.outputs.id
+    projectName: projectName
+  }
+  dependsOn: [
+    acaPullRoleAssignment
   ]
 }

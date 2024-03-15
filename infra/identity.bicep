@@ -8,3 +8,4 @@ resource identity 'Microsoft.ManagedIdentity/userAssignedIdentities@2022-01-31-p
 
 output principalId string = identity.properties.principalId
 output name string = identity.name
+output id string = identity.id
