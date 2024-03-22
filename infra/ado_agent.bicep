@@ -42,6 +42,8 @@ resource containerAppEnv 'Microsoft.App/managedEnvironments@2023-05-01' existing
   name: containerAppEnvName
 }
 
+
+
 resource adoAgentApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: adoAgentContainerName
   location: location
@@ -71,6 +73,12 @@ resource adoAgentApp 'Microsoft.App/containerApps@2023-05-01' = {
           identity: acrPullIdentityId
         }
       ]
+      secrets: [
+        {
+          name: 'ado-pat-tokens'
+          value: adoPersonalAccessToken
+        }
+      ]
     }
     template: {
       containers: [
@@ -94,16 +102,30 @@ resource adoAgentApp 'Microsoft.App/containerApps@2023-05-01' = {
               name: 'AZP_POOL'
               value: adoPoolName
             }
-            {
-              name: 'AZP_AGENT_NAME'
-              value: adoAgentName
-            }
           ]
         }
       ]
       scale: {
-        minReplicas: 0
+        minReplicas: 1
         maxReplicas: 10
+        rules: [
+          {
+            name: 'ado-agent-scaler'
+            custom: {
+              type: 'azure-pipelines'
+              metadata: {
+                poolName: adoPoolName
+                organizationURLFromEnv: adoInstanceUrl
+              }
+              auth: [
+                {
+                  secretRef: 'ado-pat-tokens'
+                  triggerParameter: 'connection'
+                }
+              ]
+            }
+          }
+        ]
       }
     }
   }
