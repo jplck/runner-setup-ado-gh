@@ -8,6 +8,8 @@ LOCATION="$2"
 ADO_URL="$3"
 ADO_PAT="$4"
 ADO_POOL_NAME="$5"
+GH_ORG_NAME="$6"
+GH_PAT="$7"
 
 if [ "$PROJECT_NAME" == "" ]; then
 echo "No project name provided - aborting"
@@ -34,4 +36,4 @@ az deployment sub create \
   --name "$PROJECT_NAME-core" \
   --location $LOCATION \
   --template-file ./infra/main.bicep \
-  --parameters projectName=$PROJECT_NAME location=$LOCATION adoInstanceUrl=$ADO_URL adoPat=$ADO_PAT adoPoolName=$ADO_POOL_NAME
+  --parameters projectName=$PROJECT_NAME location=$LOCATION adoInstanceUrl=$ADO_URL adoPat=$ADO_PAT adoPoolName=$ADO_POOL_NAME ghOrgName=$GH_ORG_NAME ghPat=$GH_PAT

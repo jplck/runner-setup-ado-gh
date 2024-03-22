@@ -98,7 +98,7 @@ module ado_agent_deploy 'deploy.bicep' = {
     location: rg.location
     containerRegistryName: acr.outputs.name
     managedIdentityName: deployPushIdentity.outputs.name
-    dockerfileLocation: './src/ado/ado_agent_linux.dockerfile'
+    dockerfileLocation: './ado_agent_linux.dockerfile'
     imageName: 'ado-agent:latest'
     supportingScripts: [
       'https://raw.githubusercontent.com/jplck/runner-setup-ado-gh/main/src/ado/ado_agent_linux.dockerfile'
@@ -117,10 +117,10 @@ module gh_runner_deploy 'deploy.bicep' = {
     location: rg.location
     containerRegistryName: acr.outputs.name
     managedIdentityName: deployPushIdentity.outputs.name
-    dockerfileLocation: './src/gh/gh_runner_linux.dockerfile'
+    dockerfileLocation: './gh_runner_linux.dockerfile'
     imageName: 'gh-runner:latest'
     supportingScripts: [
-      'https://raw.githubusercontent.com/jplck/runner-setup-ado-gh/main/src/gh/gh_agent_linux.dockerfile'
+      'https://raw.githubusercontent.com/jplck/runner-setup-ado-gh/main/src/gh/gh_runner_linux.dockerfile'
       'https://raw.githubusercontent.com/jplck/runner-setup-ado-gh/main/src/gh/start.sh'
     ]
   }
