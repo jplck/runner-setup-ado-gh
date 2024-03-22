@@ -8,6 +8,9 @@ param adoPat string
 param adoPoolName string
 param adoInstanceUrl string
 
+param ghPat string
+param ghOrgName string
+
 var acrPullRole = resourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
 
 targetScope = 'subscription'
@@ -88,13 +91,38 @@ module deploymentScriptRole 'customRole.bicep' = {
   }
 }
 
-module agent_deploy 'deploy.bicep' = {
-  name: 'agent_deploy'
+module ado_agent_deploy 'deploy.bicep' = {
+  name: 'ado_agent_deploy'
   scope: rg
   params: {
     location: rg.location
     containerRegistryName: acr.outputs.name
     managedIdentityName: deployPushIdentity.outputs.name
+    dockerfileLocation: './src/ado/ado_agent_linux.dockerfile'
+    imageName: 'ado-agent:latest'
+    supportingScripts: [
+      'https://raw.githubusercontent.com/jplck/runner-setup-ado-gh/main/src/ado/ado_agent_linux.dockerfile'
+      'https://raw.githubusercontent.com/jplck/runner-setup-ado-gh/main/src/ado/start.sh'
+    ]
+  }
+  dependsOn: [
+    deploymentScriptRoleAssignment
+  ]
+}
+
+module gh_runner_deploy 'deploy.bicep' = {
+  name: 'gh_runner_deploy'
+  scope: rg
+  params: {
+    location: rg.location
+    containerRegistryName: acr.outputs.name
+    managedIdentityName: deployPushIdentity.outputs.name
+    dockerfileLocation: './src/gh/gh_runner_linux.dockerfile'
+    imageName: 'gh-runner:latest'
+    supportingScripts: [
+      'https://raw.githubusercontent.com/jplck/runner-setup-ado-gh/main/src/gh/gh_agent_linux.dockerfile'
+      'https://raw.githubusercontent.com/jplck/runner-setup-ado-gh/main/src/gh/start.sh'
+    ]
   }
   dependsOn: [
     deploymentScriptRoleAssignment
@@ -127,3 +155,17 @@ module aca_ado_agent 'ado_agent.bicep' = {
     adoPoolName: adoPoolName
   }
 }
+
+module aca_gh_runner 'gh_runner.bicep' = {
+  name: 'aca_gh_runner'
+  scope: rg
+  params: {
+    location: rg.location
+    acrName: acr.outputs.name
+    acrPullIdentityId: acaACRPullIdentity.outputs.id
+    containerAppEnvName: acae_deploy.outputs.containerAppEnvName
+    ghOrgName: ghOrgName
+    ghPersonalAccessToken: ghPat
+  }
+}
+

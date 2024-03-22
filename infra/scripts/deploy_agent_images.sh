@@ -4,6 +4,8 @@ set -e
 
 REGISTRY_NAME="$1"
 SUB="$2"
+IMAGE_NAME="$3"
+DOCKERFILE="$4"
 
 # check if registry exists in azure and return a boolean
 function check_registry_exists() {
@@ -18,4 +20,4 @@ do
   sleep 5
 done
 
-az acr build --subscription $SUB --registry $REGISTRY_NAME --image 'ado-agent:latest' --file ./ado_agent_linux.dockerfile .
+az acr build --subscription $SUB --registry $REGISTRY_NAME --image $IMAGE_NAME --file $DOCKERFILE .
